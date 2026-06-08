@@ -21,7 +21,7 @@
   <project name="agherzan/meta-raspberrypi" path="sources/meta-raspberrypi" remote="github" revision="scarthgap"/>
 
   <!-- BSP: Texas Instruments (BeagleBone) -->
-  <project name="prabhakar-mahadev-yocto/meta-ti" path="sources/meta-ti" remote="github" revision="scarthgap"/>
+  <project name="meta-ti" path="sources/meta-ti" remote="yocto" revision="scarthgap"/>
 
   <!-- Auton custom layer -->
   <project name="GauravAgarwalGarg/MyYoctoPlayground" path="sources/meta-auton-repo" remote="github" revision="main"/>

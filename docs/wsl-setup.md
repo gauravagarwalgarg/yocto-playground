@@ -1,4 +1,4 @@
-# WSL2 Setup Guide — End to End
+# WSL2 Setup Guide End to End
 
 > Build and boot a complete embedded Linux image on WSL2 Ubuntu 22.04.
 
@@ -65,7 +65,7 @@ cd ~/yocto-qemu-arm64
 source scripts/03-setup-env.sh qemu-arm64
 ```
 
-⚠️ **MUST be sourced** (not executed) — it sets environment variables for bitbake.
+⚠️ **MUST be sourced** (not executed) it sets environment variables for bitbake.
 
 ### Step 4: Build
 
