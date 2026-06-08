@@ -27,6 +27,19 @@ fi
 # Determine the root of this repo
 AUTON_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# If we're inside a repo-synced workspace (sources/meta-auton-repo/),
+# the workspace root is two levels up. Detect this by checking for ../poky
+if [ -d "${AUTON_ROOT}/../../poky" ]; then
+    # We're at: <workspace>/sources/meta-auton-repo/ → workspace is ../..
+    WORKSPACE_ROOT="$(cd "${AUTON_ROOT}/../.." && pwd)"
+elif [ -d "${AUTON_ROOT}/sources/poky" ]; then
+    # We're at the workspace root itself (standalone usage)
+    WORKSPACE_ROOT="$AUTON_ROOT"
+else
+    # Fallback: assume workspace is $HOME/yocto-<machine> (set later)
+    WORKSPACE_ROOT=""
+fi
+
 # Available machines
 declare -A AUTON_MACHINES
 AUTON_MACHINES=(
@@ -78,9 +91,14 @@ echo "  Machine: $AUTON_MACHINE (${AUTON_MACHINES[$AUTON_MACHINE]})"
 echo ""
 
 # Determine paths
-AUTON_SOURCES="${AUTON_ROOT}/sources"
+# If WORKSPACE_ROOT wasn't detected, try common locations
+if [ -z "$WORKSPACE_ROOT" ]; then
+    WORKSPACE_ROOT="$HOME/yocto-${AUTON_MACHINE}"
+fi
+
+AUTON_SOURCES="${WORKSPACE_ROOT}/sources"
 AUTON_POKY="${AUTON_SOURCES}/poky"
-AUTON_BUILDDIR="${AUTON_ROOT}/build/${AUTON_MACHINE}"
+AUTON_BUILDDIR="${WORKSPACE_ROOT}/build/${AUTON_MACHINE}"
 
 # Check if poky exists (repo sync must have been done)
 if [ ! -d "$AUTON_POKY" ]; then
@@ -201,6 +219,7 @@ _auton_write_bblayers_conf() {
     esac
 
     # Always add meta-auton last (highest priority)
+    # meta-auton lives inside the AUTON_ROOT (this repo)
     layers="${layers}
   ${AUTON_ROOT}/meta-auton \\\\"
 
