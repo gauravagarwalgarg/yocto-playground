@@ -17,45 +17,32 @@ A hands-on Yocto Project playground for building custom embedded Linux images. F
 
 ## Quick Start
 
-### QEMU on WSL (No Hardware Needed)
+### Single Command Setup (All Machines)
 
 ```bash
-mkdir ~/yocto-qemu && cd ~/yocto-qemu
-repo init -u https://github.com/GauravAgarwalGarg/MyYoctoPlayground.git \
-    -m manifests/qemu.xml -b main
-repo sync
+# 1. Install deps (once)
+cd ~/Projects/GauravAgarwalGarg/MyYoctoPlayground
+./scripts/01-install-deps.sh && source ~/.bashrc
+
+# 2. Sync ALL sources (one workspace, all BSP layers)
+./scripts/02-repo-sync.sh
+
+# 3. Setup + Build (pick your machine)
+cd ~/yocto-auton
 source sources/meta-auton-repo/auton-init-build-env qemu-arm64
-bitbake auton-image-minimal
-runqemu qemu-arm64 nographic
+bitbake core-image-minimal
+
+# 4. Run in QEMU
+runqemu qemu-arm64 nographic slirp
 ```
 
-### BeagleBone Black
+### Multiconfig (Build All Machines from One Workspace)
 
 ```bash
-mkdir ~/yocto-bbb && cd ~/yocto-bbb
-repo init -u https://github.com/GauravAgarwalGarg/MyYoctoPlayground.git \
-    -m manifests/beaglebone-black.xml -b main
-repo sync
-source sources/meta-auton-repo/auton-init-build-env beaglebone-black
-bitbake auton-image-minimal
-```
-
-### Raspberry Pi 5
-
-```bash
-mkdir ~/yocto-rpi5 && cd ~/yocto-rpi5
-repo init -u https://github.com/GauravAgarwalGarg/MyYoctoPlayground.git \
-    -m manifests/raspberrypi5.xml -b main
-repo sync
-source sources/meta-auton-repo/auton-init-build-env raspberrypi5
-bitbake auton-image-minimal
-```
-
-### Interactive Machine Selection
-
-```bash
-source auton-init-build-env
-# Prompts: 1) beaglebone-black  2) raspberrypi5  3) qemu-arm  4) qemu-arm64
+source sources/meta-auton-repo/auton-init-build-env all
+bitbake mc:qemu-arm64:auton-image-minimal
+bitbake mc:beaglebone-black:auton-image-minimal
+bitbake mc:raspberrypi5:auton-image-minimal
 ```
 
 ---

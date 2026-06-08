@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Default manifest: ALL layers for multiconfig builds.
+  One sync, all machines (qemu-arm64, beaglebone-black, raspberrypi5).
+  Yocto Scarthgap LTS baseline.
+-->
+<manifest>
+  <default revision="scarthgap" remote="yocto" sync-j="4"/>
+
+  <remote name="yocto" fetch="https://git.yoctoproject.org/"/>
+  <remote name="oe" fetch="https://github.com/openembedded/"/>
+  <remote name="github" fetch="https://github.com/"/>
+
+  <!-- Core: Poky (bitbake + meta + meta-poky + meta-yocto-bsp) -->
+  <project name="poky" path="sources/poky" remote="yocto" revision="scarthgap"/>
+
+  <!-- OpenEmbedded layers -->
+  <project name="meta-openembedded" path="sources/meta-openembedded" remote="oe" revision="scarthgap"/>
+
+  <!-- BSP: Raspberry Pi -->
+  <project name="agherzan/meta-raspberrypi" path="sources/meta-raspberrypi" remote="github" revision="scarthgap"/>
+
+  <!-- BSP: Texas Instruments (BeagleBone) -->
+  <project name="prabhakar-mahadev-yocto/meta-ti" path="sources/meta-ti" remote="github" revision="scarthgap"/>
+
+  <!-- Auton custom layer -->
+  <project name="GauravAgarwalGarg/MyYoctoPlayground" path="sources/meta-auton-repo" remote="github" revision="main"/>
+</manifest>
