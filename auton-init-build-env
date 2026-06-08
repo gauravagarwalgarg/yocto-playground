@@ -24,17 +24,19 @@ fi
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Detect workspace root: are we inside sources/meta-auton-repo/ ?
-if [ -d "${SCRIPT_DIR}/../../poky" ]; then
+if [ -d "${SCRIPT_DIR}/../poky" ]; then
+    # We're at: <workspace>/sources/meta-auton-repo/ → workspace is ../..
     WORKSPACE="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 elif [ -d "${SCRIPT_DIR}/sources/poky" ]; then
+    # We're at the workspace root itself (standalone usage)
     WORKSPACE="$SCRIPT_DIR"
 else
     echo "ERROR: Cannot find poky. Expected at:"
-    echo "  ${SCRIPT_DIR}/../../poky  (repo-synced workspace)"
+    echo "  ${SCRIPT_DIR}/../poky  (repo-synced workspace)"
     echo "  ${SCRIPT_DIR}/sources/poky (standalone)"
     echo ""
     echo "Run repo sync first:"
-    echo "  repo init -u https://github.com/GauravAgarwalGarg/MyYoctoPlayground.git -m manifests/qemu.xml -b main"
+    echo "  repo init -u https://github.com/GauravAgarwalGarg/MyYoctoPlayground.git -m manifests/default.xml -b main"
     echo "  repo sync"
     return 1
 fi
