@@ -20,6 +20,9 @@
   <!-- BSP: Raspberry Pi -->
   <project name="agherzan/meta-raspberrypi" path="sources/meta-raspberrypi" remote="github" revision="scarthgap"/>
 
+  <!-- BSP: ARM (required by meta-ti) -->
+  <project name="meta-arm" path="sources/meta-arm" remote="yocto" revision="scarthgap"/>
+
   <!-- BSP: Texas Instruments (BeagleBone) -->
   <project name="meta-ti" path="sources/meta-ti" remote="yocto" revision="scarthgap"/>
 
