@@ -1,44 +1,18 @@
-# WSL2 Setup Guide End to End
+# WSL2 Setup Guide — Tested & Working
 
-> Build and boot a complete embedded Linux image on WSL2 Ubuntu 22.04.
-
----
-
-## Overview
-
-```
-01-install-deps.sh  →  02-repo-sync.sh  →  source 03-setup-env.sh  →  04-build.sh  →  05-run-qemu.sh
-```
-
-Total time: ~2-3 hours (first build). Subsequent builds: ~5 minutes (cached).
+> Build and boot embedded Linux on WSL2 Ubuntu 22.04. Verified June 2026.
 
 ---
 
-## Prerequisites
+## Proven Workflow
 
-- **WSL2** with Ubuntu 22.04 (not WSL1)
-- **50GB+ free disk space** on WSL ext4 filesystem
-- **8GB+ RAM** allocated to WSL (16GB recommended)
-- **Internet connection** (downloads ~5GB of sources and toolchains)
-
-### WSL2 Configuration
-
-Create/edit `%USERPROFILE%\.wslconfig` on Windows:
-
-```ini
-[wsl2]
-memory=16GB
-processors=8
-swap=8GB
 ```
-
-Then restart WSL: `wsl --shutdown` from PowerShell.
+01-install-deps.sh → 02-repo-sync.sh → source auton-init-build-env → bitbake → runqemu
+```
 
 ---
 
-## Step-by-Step
-
-### Step 1: Install Dependencies
+## Step 1: Install Dependencies
 
 ```bash
 cd ~/Projects/GauravAgarwalGarg/MyYoctoPlayground
@@ -46,42 +20,94 @@ cd ~/Projects/GauravAgarwalGarg/MyYoctoPlayground
 source ~/.bashrc
 ```
 
-Installs: build tools, QEMU, locale, Google repo tool.
-
-### Step 2: Clone Sources
+## Step 2: Sync Sources
 
 ```bash
-./scripts/02-repo-sync.sh qemu-arm64
+./scripts/02-repo-sync.sh
 ```
 
-Options: `qemu-arm64`, `qemu-arm`, `beaglebone-black`, `raspberrypi5`
+Creates `~/yocto-auton/` with all layers (poky, meta-oe, meta-ti, meta-raspberrypi, meta-auton).
 
-This creates `~/yocto-qemu-arm64/` and downloads Poky + meta-openembedded + meta-auton.
-
-### Step 3: Setup Environment
+## Step 3: Setup Environment
 
 ```bash
-cd ~/yocto-qemu-arm64
-source scripts/03-setup-env.sh qemu-arm64
+cd ~/yocto-auton
+sed -i 's/\r$//' sources/meta-auton-repo/auton-init-build-env
+source sources/meta-auton-repo/auton-init-build-env qemux86-64
 ```
 
-⚠️ **MUST be sourced** (not executed) it sets environment variables for bitbake.
+Machine options: `qemux86-64`, `qemu-arm64`, `beaglebone-black`, `raspberrypi5`
 
-### Step 4: Build
+## Step 4: Build
 
 ```bash
-./scripts/04-build.sh
+bitbake core-image-minimal
 ```
 
-First build takes 1-3 hours. Go get coffee. Subsequent builds use sstate cache (~5 min).
+First build: ~1.5 hours. Subsequent: ~5 minutes (sstate cached).
 
-### Step 5: Run in QEMU
+## Step 5: Run in QEMU
 
 ```bash
-./scripts/05-run-qemu.sh qemu-arm64
+runqemu qemux86-64 nographic slirp wic
 ```
 
 Login: `root` (no password). Exit: `Ctrl+A` then `X`.
+
+---
+
+## Key Design Decisions (Lessons Learned)
+
+### One machine at a time (NO multiconfig)
+
+Multiconfig requires ALL BSP layers and their dependencies to be fully resolved at parse time. This means:
+- `meta-ti` needs `meta-arm`
+- `meta-raspberrypi` needs specific kernel configs
+- Custom machine configs get parsed even if you're building QEMU
+
+**Solution**: The env script generates `local.conf` and `bblayers.conf` for ONE machine only. Switch machines by re-sourcing with a different argument.
+
+### Stock QEMU uses `poky` distro, not `auton`
+
+The `auton` distro forces `PREFERRED_PROVIDER_virtual/kernel = "linux-auton"` which is only compatible with our custom machines. Stock QEMU machines (`qemux86-64`) need `linux-yocto`.
+
+**Solution**: The env script auto-selects:
+- `qemux86-64` → `DISTRO=poky` + `linux-yocto` (guaranteed to work)
+- `qemu-arm64` → `DISTRO=auton` + `linux-yocto` (custom distro, stock kernel)
+- `beaglebone-black` / `raspberrypi5` → `DISTRO=auton` + `linux-yocto` (for now)
+
+### IMAGE_FSTYPES must include ext4 for runqemu
+
+`runqemu` expects `.ext4` rootfs by default. Our distro was only producing `.wic`. Fixed: `IMAGE_FSTYPES += "ext4"` in generated local.conf.
+
+### CRLF line endings break everything
+
+Files created from Windows/Kiro get `\r\n`. Bash scripts fail with `$'in\r'` errors. Fixed with:
+- `.gitattributes` enforcing LF
+- `sed -i 's/\r$//'` after each sync until git propagates
+
+### BSP layers only for selected machine
+
+`bblayers.conf` only includes BSP layers relevant to the current machine:
+- `qemux86-64` / `qemu-arm64`: no BSP layers needed
+- `beaglebone-black`: adds `meta-arm` + `meta-ti`
+- `raspberrypi5`: adds `meta-raspberrypi`
+
+---
+
+## Switching Machines
+
+```bash
+# Delete current build config
+rm -rf ~/yocto-auton/build/conf
+
+# Re-source with different machine
+cd ~/yocto-auton
+source sources/meta-auton-repo/auton-init-build-env raspberrypi5
+
+# Build
+bitbake core-image-minimal
+```
 
 ---
 
@@ -89,34 +115,11 @@ Login: `root` (no password). Exit: `Ctrl+A` then `X`.
 
 | Item | Why | Manual Step |
 |------|-----|-------------|
-| WSL2 memory config | Windows-side file | Edit `%USERPROFILE%\.wslconfig` manually |
-| WSL2 disk expansion | Needs PowerShell admin | `wsl --shutdown` + diskpart expand |
-| Terminal font (Nerd Font) | Terminal app setting | Install font, set in Windows Terminal settings |
-| Git SSH keys | Personal credentials | `ssh-keygen` + add to GitHub |
-| First `repo sync` auth | May need GitHub token | `repo init` prompts if needed |
-| SD card device path | Hardware-dependent | Run `lsblk` to find `/dev/sdX` |
-| Serial console access | USB passthrough | WSL doesn't natively support USB-serial; use usbipd-win |
-
-### USB Serial Console (for real hardware)
-
-WSL2 doesn't have direct USB access. To connect to BeagleBone/RPi5 serial:
-
-**Option A: usbipd-win** (recommended)
-```powershell
-# From PowerShell (admin)
-winget install usbipd
-usbipd list                    # Find your USB-serial adapter
-usbipd bind --busid X-Y       # Bind it
-usbipd attach --wsl --busid X-Y  # Attach to WSL
-```
-
-Then in WSL:
-```bash
-sudo apt install minicom
-minicom -D /dev/ttyUSB0 -b 115200
-```
-
-**Option B: Use PuTTY on Windows directly** for serial console.
+| WSL2 memory config | Windows file | Edit `%USERPROFILE%\.wslconfig` |
+| WSL2 disk expansion | PowerShell admin | `wsl --shutdown` + diskpart |
+| CRLF fix after sync | Git attr propagation | `sed -i 's/\r$//' sources/meta-auton-repo/auton-init-build-env` |
+| SD card device path | Hardware-dependent | `lsblk` to find `/dev/sdX` |
+| USB serial console | WSL limitation | Use usbipd-win or PuTTY on Windows |
 
 ---
 
@@ -124,53 +127,22 @@ minicom -D /dev/ttyUSB0 -b 115200
 
 | Problem | Solution |
 |---------|----------|
-| `repo: command not found` | `source ~/.bashrc` or re-run `01-install-deps.sh` |
-| `bitbake: command not found` | Re-source: `source scripts/03-setup-env.sh qemu-arm64` |
-| `No space left on device` | Expand WSL vhdx or clean: `bitbake -c cleansstate auton-image-minimal` |
-| `do_fetch` network error | Retry: `bitbake -c fetch auton-image-minimal` |
-| Kernel sha256 mismatch | Add `PREFERRED_PROVIDER_virtual/kernel = "linux-yocto"` to `conf/local.conf` |
-| QEMU hangs at boot | Use `slirp` networking: `runqemu qemu-arm64 nographic slirp` |
-| `locale` warnings | `sudo locale-gen en_US.UTF-8 && export LANG=en_US.UTF-8` |
-| Build takes forever | Check CPU/RAM allocation in `.wslconfig`; use `BB_NUMBER_THREADS` |
+| `repo: command not found` | `source ~/.bashrc` |
+| `bitbake: command not found` | Re-source the env script |
+| `Nothing PROVIDES virtual/kernel` | Check MACHINE and DISTRO match in local.conf |
+| `meta-ti requires meta-arm` | Only include meta-ti for beaglebone-black builds |
+| `ti-soc.inc not found` | meta-ti in bblayers but building QEMU — remove it |
+| `runqemu ERROR - Failed to find rootfs` | Add `IMAGE_FSTYPES += "ext4"` or use `wic` flag |
+| `$'in\r'` syntax error | CRLF: `sed -i 's/\r$//' <file>` |
+| Build takes 3+ hours | Check `.wslconfig` memory/CPU allocation |
+| `No space left` | Clean: `bitbake -c cleansstate core-image-minimal` |
 
 ---
 
-## Expanding to Real Hardware
+## Next Steps (After QEMU Works)
 
-After QEMU works:
-
-```bash
-# BeagleBone Black
-./scripts/02-repo-sync.sh beaglebone-black
-cd ~/yocto-beaglebone-black
-source scripts/03-setup-env.sh beaglebone-black
-./scripts/04-build.sh
-./scripts/06-flash-hardware.sh /dev/sdX beaglebone-black
-
-# Raspberry Pi 5
-./scripts/02-repo-sync.sh raspberrypi5
-cd ~/yocto-raspberrypi5
-source scripts/03-setup-env.sh raspberrypi5
-./scripts/04-build.sh
-./scripts/06-flash-hardware.sh /dev/sdX raspberrypi5
-```
-
----
-
-## Directory Layout After Setup
-
-```
-~/yocto-qemu-arm64/
-├── sources/
-│   ├── poky/                  # Yocto core (bitbake, meta, meta-poky)
-│   ├── meta-openembedded/     # OE layers (meta-oe, networking, python)
-│   └── meta-auton-repo/       # This repo (meta-auton layer + scripts)
-├── build-qemu-arm64/
-│   ├── conf/
-│   │   ├── local.conf         # Machine, distro, parallelism settings
-│   │   └── bblayers.conf      # Layer paths
-│   └── tmp/
-│       └── deploy/images/     # Built images land here
-├── downloads/                 # Shared source tarballs (cached)
-└── sstate-cache/              # Shared build cache (speeds up rebuilds)
-```
+1. **Raspberry Pi 5**: Re-source with `raspberrypi5`, build, flash to SD
+2. **BeagleBone Black**: Re-source with `beaglebone-black`, build, flash
+3. **Custom kernel**: Fix `linux-auton` recipe sha256, test on QEMU ARM64
+4. **Custom distro**: Add packages to `auton-image-minimal.bb`
+5. **CI**: Add GitHub Actions workflow for automated QEMU builds
