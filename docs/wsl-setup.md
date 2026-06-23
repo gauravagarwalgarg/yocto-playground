@@ -1,4 +1,4 @@
-# WSL2 Setup Guide — Tested & Working
+# WSL2 Setup Guide Tested & Working
 
 > Build and boot embedded Linux on WSL2 Ubuntu 22.04. Verified June 2026.
 
@@ -131,7 +131,7 @@ bitbake core-image-minimal
 | `bitbake: command not found` | Re-source the env script |
 | `Nothing PROVIDES virtual/kernel` | Check MACHINE and DISTRO match in local.conf |
 | `meta-ti requires meta-arm` | Only include meta-ti for beaglebone-black builds |
-| `ti-soc.inc not found` | meta-ti in bblayers but building QEMU — remove it |
+| `ti-soc.inc not found` | meta-ti in bblayers but building QEMU remove it |
 | `runqemu ERROR - Failed to find rootfs` | Add `IMAGE_FSTYPES += "ext4"` or use `wic` flag |
 | `$'in\r'` syntax error | CRLF: `sed -i 's/\r$//' <file>` |
 | Build takes 3+ hours | Check `.wslconfig` memory/CPU allocation |
