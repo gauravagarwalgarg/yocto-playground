@@ -1,17 +1,39 @@
 site_name: Yocto Playground
+site_description: Yocto/OpenEmbedded build system playground and learning resource
 site_url: https://gauravagarwalgarg.github.io/yocto-playground/
 repo_url: https://github.com/GauravAgarwalGarg/yocto-playground
+repo_name: GauravAgarwalGarg/yocto-playground
+
 theme:
   name: material
   palette:
     - scheme: slate
+      primary: brown
+      accent: orange
   features:
+    - navigation.tabs
     - navigation.sections
     - content.code.copy
+    - search.suggest
+  icon:
+    repo: fontawesome/brands/github
+
 markdown_extensions:
-  - pymdownx.highlight
+  - pymdownx.highlight:
+      anchor_linenums: true
   - pymdownx.superfences
   - admonition
   - tables
   - toc:
       permalink: true
+
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - Learning Path: learning-path.md
+  - WSL Setup: wsl-setup.md
+  - QEMU WSL Guide: qemu-wsl-guide.md
+  - Machine Configs: machine-configs.md
+  - Multiconfig Design: multiconfig-design.md
+  - Awesome Yocto: awesome-yocto.md
+  - Awesome Embedded Linux: awesome-embedded-linux.md
