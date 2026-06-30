@@ -1,5 +1,12 @@
 # MyYoctoPlayground
 
+[![CI](https://github.com/gauravagarwalgarg/yocto-playground/actions/workflows/ci.yml/badge.svg)](https://github.com/gauravagarwalgarg/yocto-playground/actions/workflows/ci.yml) [![Docs](https://img.shields.io/badge/docs-live-blue?logo=github)](https://gauravagarwalgarg.github.io/yocto-playground/) ![Yocto](https://img.shields.io/badge/Yocto-BitBake-blue?logo=linux&logoColor=white) [![License](https://img.shields.io/github/license/gauravagarwalgarg/yocto-playground)](https://github.com/gauravagarwalgarg/yocto-playground/blob/main/LICENSE)
+
+> 📖 **Documentation**: [https://gauravagarwalgarg.github.io/yocto-playground/](https://gauravagarwalgarg.github.io/yocto-playground/)
+>
+> 📦 **Repository**: [GitHub](https://github.com/gauravagarwalgarg/yocto-playground)
+
+
 A hands-on Yocto Project playground for building custom embedded Linux images. Features the **Auton** distribution with Linux 6.12 LTS, targeting BeagleBone Black and Raspberry Pi 5.
 
 ---
